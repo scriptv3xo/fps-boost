@@ -37,38 +37,51 @@ task.spawn(function()
 end)
 
 local function createWatermark()
-    local targetParent = game:GetService("CoreGui") or Players.LocalPlayer:WaitForChild("PlayerGui")
+    local localPlayer = Players.LocalPlayer
+    if not localPlayer then return end
     
-    if targetParent:FindFirstChild("v3xo_Watermark") then return end
+    local playerGui = localPlayer:FindFirstChildOfClass("PlayerGui")
+    if not playerGui then return end
+    
+    -- Проверка на то, существует ли уже рабочий GUI
+    local existingGui = playerGui:FindFirstChild("v3xo_Watermark")
+    if existingGui and existingGui:FindFirstChild("WatermarkText") then 
+        return 
+    elseif existingGui then
+        existingGui:Destroy() -- Очистка сломанного контейнера
+    end
 
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "v3xo_Watermark"
     screenGui.ResetOnSpawn = false
     screenGui.DisplayOrder = 9999
-    screenGui.Parent = targetParent
-
+    
     local label = Instance.new("TextLabel")
     label.Name = "WatermarkText"
     label.Size = UDim2.new(0, 200, 0, 50)
     
-    label.Position = UDim2.new(1, -170, 1, -120) 
+    -- Смещение к кнопке прыжка для мобильных экранов
+    label.Position = UDim2.new(1, -150, 1, -120) 
     label.AnchorPoint = Vector2.new(0.5, 0.5)
     
     label.Text = "v3xo"
     label.Font = Enum.Font.GothamBold
-    label.TextSize = 24
+    label.TextSize = 28
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextTransparency = 0.5
     
-    label.BackgroundTransparency = 0.8
+    label.BackgroundTransparency = 1
     label.Active = false
     label.Selectable = false
     
     label.Parent = screenGui
+    screenGui.Parent = playerGui
 end
 
-createWatermark()
-
-RunService.RenderStepped:Connect(function()
-    createWatermark()
+-- Безопасный бесконечный цикл проверки видимости текста
+task.spawn(function()
+    while true do
+        pcall(createWatermark)
+        task.wait(1)
+    end
 end)
